@@ -1,0 +1,86 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Dependency directories
+node_modules/
+.pnpm-store/
+
+# Build output
+dist/
+build/
+coverage/
+
+# Vite
+vite.config.ts.timestamp-*
+*.local
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# IDE / Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*.sublime-project
+*.sublime-workspace
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# TypeScript
+*.tsbuildinfo
+
+# Cache
+.cache/
+.parcel-cache/
+.eslintcache
+
+# Temporary files
+tmp/
+temp/
+
+# Optional lock files
+package-lock.json
+yarn.lock
+
+# Keep pnpm lock if using pnpm
+# Remove comment below if project uses pnpm officially
+# pnpm-lock.yaml
+
+# Firebase
+.firebase/
+
+# Local database / sqlite
+*.sqlite
+*.db
+
+# Test outputs
+playwright-report/
+test-results/
+
+# Docker
+.docker/
+
+# Turbo / Monorepo
+.turbo/
+
+# Next.js (if reused later)
+.next/
+
+# React Native / Expo (future-proof)
+.expo/
