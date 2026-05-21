@@ -5,16 +5,16 @@ import { HEADER_HEIGHT } from "@/types/calendar";
 export function CalendarHeader({ weekDays }: { weekDays: Date[] }) {
   return (
     <div
-      className="flex sticky top-0 z-30 bg-white/80 backdrop-blur-2xl border-b border-white/30 shadow-sm"
+      className="flex sticky top-0 z-30 bg-white/80 backdrop-blur-2xl border-b border-slate-200/80 shadow-sm"
       style={{ height: HEADER_HEIGHT }}
     >
-      <div className="w-14 flex-shrink-0 border-r border-white/20" />
+      <div className="w-14 flex-shrink-0 border-r border-slate-200/70" />
       {weekDays.map((day) => {
         const today = isSameDay(day, new Date());
         return (
           <div
             key={day.toISOString()}
-            className="flex-1 min-w-[100px] border-r border-white/20"
+            className="flex-1 min-w-[100px] border-r border-slate-200/70"
           >
             <div
               className={`flex flex-col items-center justify-center h-full transition-colors duration-150 ${

@@ -5,8 +5,10 @@ import {
   createScheduleApi,
   updateScheduleApi,
   deleteScheduleApi,
+  getFreeSlotsApi,
 } from "@/api/schedule.api";
 import type { Schedule, CreateSchedulePayload, UpdateSchedulePayload } from "@/types/schedule.type";
+import type { FreeSlot } from "@/types/free-slot.type";
 import { ApiError } from "@/types/schedule.type";
 
 export async function getSchedulesService(start: string, end: string): Promise<Schedule[]> {
@@ -50,6 +52,17 @@ export async function updateScheduleService(id: number, payload: UpdateScheduleP
       throw new ApiError(error.response.data?.message || "Failed to update schedule", error.response.status);
     }
     throw new ApiError("Failed to update schedule", 500);
+  }
+}
+
+export async function getFreeSlotsService(date: string, durationMinutes: number): Promise<FreeSlot[]> {
+  try {
+    return await getFreeSlotsApi(date, durationMinutes);
+  } catch (error: unknown) {
+    if (isAxiosError(error) && error.response) {
+      throw new ApiError(error.response.data?.message || "Failed to fetch free slots", error.response.status);
+    }
+    throw new ApiError("Failed to fetch free slots", 500);
   }
 }
 

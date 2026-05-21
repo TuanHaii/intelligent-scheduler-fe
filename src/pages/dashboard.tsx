@@ -1,8 +1,8 @@
-import { useEffect } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Bell, Sparkles } from "lucide-react";
+import { Bell, Wand2 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { TaskBoard } from "@/components/TaskBoard";
 import { CalendarBoard } from "@/components/CalendarBoard";
@@ -13,6 +13,11 @@ import { DragProvider } from "@/context/DragContext";
 export default function Dashboard() {
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
+  const [findFreeCounter, setFindFreeCounter] = useState(0);
+
+  const handleFindFreeClose = useCallback(() => {
+    setFindFreeCounter(0);
+  }, []);
 
   useEffect(() => {
     const token = localStorage.getItem("accessToken");
@@ -47,6 +52,22 @@ export default function Dashboard() {
               <p>Coming in Sprint 5</p>
             </TooltipContent>
           </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setFindFreeCounter((c) => c + 1)}
+                className="rounded-full w-9 h-9 bg-gradient-to-br from-emerald-400/20 to-teal-500/20 hover:from-emerald-400/30 hover:to-teal-500/30 border border-emerald-300/30 hover:border-emerald-300/60 hover:shadow-md hover:shadow-emerald-300/20 transition-all duration-200"
+              >
+                <Wand2 className="w-4.5 h-4.5 text-emerald-600" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent className="glass-card text-gray-800">
+              <p>Find free time</p>
+            </TooltipContent>
+          </Tooltip>
           
           <div className="h-8 w-px bg-white/30 mx-1" />
           
@@ -72,25 +93,11 @@ export default function Dashboard() {
             <h2 className="text-lg font-medium text-gray-800">Weekly Schedule</h2>
           </div>
           <div className="flex-1 overflow-hidden relative">
-            <CalendarBoard />
+            <CalendarBoard findFreeTrigger={findFreeCounter} onFindFreeClose={handleFindFreeClose} />
           </div>
         </div>
       </main>
 
-      {/* AI Assistant FAB */}
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button 
-            className="fixed bottom-6 right-6 w-14 h-14 rounded-full glass-button flex items-center justify-center p-0 z-50 shadow-blue-500/30"
-            onClick={() => {}}
-          >
-            <Sparkles className="w-6 h-6" />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent side="left" className="glass-card text-gray-800">
-          <p>AI Assistant - Coming in Sprint 4</p>
-        </TooltipContent>
-      </Tooltip>
     </div>
     </DragProvider>
   );

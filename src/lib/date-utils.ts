@@ -10,7 +10,7 @@ import {
   setHours,
   setMinutes,
 } from "date-fns";
-import { SLOT_INTERVAL, SLOT_HEIGHT, NUM_SLOTS } from "@/types/calendar";
+import { SLOT_INTERVAL, SLOT_HEIGHT, HOUR_HEIGHT, NUM_SLOTS } from "@/types/calendar";
 
 export const getWeekDays = (date: Date) => {
   const start = startOfWeek(date, { weekStartsOn: 1 });
@@ -21,13 +21,15 @@ export const formatTime = (isoString: string) => {
   return format(parseISO(isoString), "HH:mm");
 };
 
+export const PIXELS_PER_MINUTE = HOUR_HEIGHT / 60;
+
 export const getSlotPosition = (startTime: string, endTime: string) => {
   const start = parseISO(startTime);
   const end = parseISO(endTime);
   const startMins = getHours(start) * 60 + getMinutes(start);
   const durationMins = differenceInMinutes(end, start);
-  const top = startMins;
-  const height = durationMins;
+  const top = startMins * PIXELS_PER_MINUTE;
+  const height = durationMins * PIXELS_PER_MINUTE;
   return { top, height };
 };
 
@@ -60,6 +62,8 @@ export const getCurrentTimeMinutes = () => {
   const now = new Date();
   return now.getHours() * 60 + now.getMinutes();
 };
+
+export const getCurrentHour = () => new Date().getHours();
 
 export const isSameDay = (d1: Date, d2: Date) => {
   return (

@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback, memo } from "react";
 import { useUpdateSchedule } from "@/hooks/useSchedules";
 import type { Schedule } from "@/types/schedule.type";
 import { ApiError } from "@/types/schedule.type";
-import { formatTime, getSlotPosition, snapToInterval } from "@/lib/date-utils";
+import { formatTime, getSlotPosition, snapToInterval, PIXELS_PER_MINUTE } from "@/lib/date-utils";
 import { parseISO, addMinutes, differenceInMinutes } from "date-fns";
 import { Link2, GripVertical, Clock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -59,7 +59,8 @@ export const CalendarScheduleBlock = memo(function CalendarScheduleBlock({
       if (!state) return;
       const deltaY = e.clientY - state.startClientY;
       const newHeight = Math.max(state.originalHeight + deltaY, MIN_EVENT_HEIGHT);
-      const snappedHeight = snapToInterval(newHeight, SNAP_INTERVAL);
+      const snappedMinutes = snapToInterval(newHeight / PIXELS_PER_MINUTE, SNAP_INTERVAL);
+      const snappedHeight = snappedMinutes * PIXELS_PER_MINUTE;
       resizingHeightRef.current = snappedHeight;
       setResizingHeight(snappedHeight);
     };
@@ -68,7 +69,7 @@ export const CalendarScheduleBlock = memo(function CalendarScheduleBlock({
       const state = resizeRef.current;
       const finalHeight = resizingHeightRef.current;
       if (state && finalHeight !== null && finalHeight !== state.originalHeight) {
-        const snappedDuration = finalHeight;
+        const snappedDuration = finalHeight / PIXELS_PER_MINUTE;
         const newEndTime = addMinutes(parseISO(schedule.startTime), snappedDuration);
 
         updateSchedule.mutate(

@@ -1,8 +1,8 @@
 import { useState, useRef, useEffect, useCallback, useMemo, useLayoutEffect } from "react";
-import { format, isSameDay as dfIsSameDay, startOfDay, parseISO } from "date-fns";
+import { format, isSameDay as dfIsSameDay, startOfDay, parseISO, differenceInMinutes, addDays } from "date-fns";
 import type { Schedule } from "@/types/schedule.type";
-import { SLOT_HEIGHT, HOUR_HEIGHT, NUM_SLOTS, HEADER_HEIGHT, SLOT_INTERVAL } from "@/types/calendar";
-import { generateTimeSlots, hours, getCurrentTimeMinutes, createIsoDateFromMinutes } from "@/lib/date-utils";
+import { SLOT_HEIGHT, HOUR_HEIGHT, NUM_SLOTS, HEADER_HEIGHT, SLOT_INTERVAL, START_HOUR, END_HOUR } from "@/types/calendar";
+import { generateTimeSlots, hours, getCurrentTimeMinutes, createIsoDateFromMinutes, PIXELS_PER_MINUTE, getCurrentHour } from "@/lib/date-utils";
 import { CalendarScheduleBlock } from "@/components/CalendarScheduleBlock";
 import { CalendarHeader } from "@/components/CalendarHeader";
 import { AllDayMultiDayRow } from "@/components/AllDayMultiDayRow";
@@ -47,9 +47,11 @@ export function CalendarGrid({
 
   const today = useMemo(() => new Date(), []);
   const todayMinutes = useMemo(() => getCurrentTimeMinutes(), []);
+  const currentHour = useMemo(() => getCurrentHour(), []);
+  const isCurrentTimeInRange = currentHour >= START_HOUR && currentHour <= END_HOUR;
 
   // Classify schedules
-  const { allDaySchedules, multiDaySchedules, gridSchedules, scheduleTypes, occupiedDayIndices } = useMemo(() => {
+  const { allDaySchedules, multiDaySchedules, gridSchedules, scheduleTypes, dayOverlays } = useMemo(() => {
     const allDay: Schedule[] = [];
     const multiDay: Schedule[] = [];
     const grid: Schedule[] = [];
@@ -65,22 +67,26 @@ export function CalendarGrid({
         grid.push(s);
       }
     }
-    const occupied = new Set<number>();
-    for (const s of allDay) {
-      const dayStart = startOfDay(parseISO(s.startTime)).getTime();
-      weekDays.forEach((d, i) => {
-        if (startOfDay(d).getTime() === dayStart) occupied.add(i);
+    const overlays = new Map<number, { top: number; height: number }[]>();
+    const addOverlay = (schedule: Schedule) => {
+      const eventStart = parseISO(schedule.startTime);
+      const eventEnd = parseISO(schedule.endTime);
+      weekDays.forEach((day, dayIdx) => {
+        const dayStart = startOfDay(day);
+        const dayEnd = addDays(dayStart, 1);
+        const rangeStart = eventStart > dayStart ? eventStart : dayStart;
+        const rangeEnd = eventEnd < dayEnd ? eventEnd : dayEnd;
+        if (rangeStart < rangeEnd) {
+          const top = differenceInMinutes(rangeStart, dayStart) * PIXELS_PER_MINUTE;
+          const height = differenceInMinutes(rangeEnd, rangeStart) * PIXELS_PER_MINUTE;
+          if (!overlays.has(dayIdx)) overlays.set(dayIdx, []);
+          overlays.get(dayIdx)!.push({ top, height });
+        }
       });
-    }
-    for (const s of multiDay) {
-      const eventStart = startOfDay(parseISO(s.startTime)).getTime();
-      const eventEnd = startOfDay(parseISO(s.endTime)).getTime();
-      weekDays.forEach((d, i) => {
-        const day = startOfDay(d).getTime();
-        if (day >= eventStart && day <= eventEnd) occupied.add(i);
-      });
-    }
-    return { allDaySchedules: allDay, multiDaySchedules: multiDay, gridSchedules: grid, scheduleTypes: types, occupiedDayIndices: occupied };
+    };
+    allDay.forEach(addOverlay);
+    multiDay.forEach(addOverlay);
+    return { allDaySchedules: allDay, multiDaySchedules: multiDay, gridSchedules: grid, scheduleTypes: types, dayOverlays: overlays };
   }, [schedules, weekDays]);
 
   useLayoutEffect(() => {
@@ -259,6 +265,7 @@ export function CalendarGrid({
   }, [draggedTask, dropTarget]);
 
   const labelOffset = 2;
+  const toPx = (m: number) => m * PIXELS_PER_MINUTE;
 
   return (
     <div className="flex flex-col h-full">
@@ -284,16 +291,18 @@ export function CalendarGrid({
       >
         <div className="flex w-full min-w-[800px]" style={{ height: NUM_SLOTS * SLOT_HEIGHT }}>
           {/* Time gutter - sticky left */}
-          <div className="w-14 flex-shrink-0 sticky left-0 z-10 bg-white/50 backdrop-blur-sm border-r border-white/20">
+          <div className="w-14 flex-shrink-0 sticky left-0 z-10 bg-white/50 backdrop-blur-sm border-r border-slate-200/70">
             {hours.map((h) => (
               <div key={h} className="relative" style={{ height: HOUR_HEIGHT }}>
-                <span
-                  className="absolute right-2 text-[10px] font-medium text-gray-400 select-none pointer-events-none"
-                  style={{ top: `-${labelOffset}px` }}
-                >
-                  {format(new Date().setHours(h, 0, 0, 0), "h a")}
-                </span>
-                <div className="border-b border-white/20 h-full" />
+                {h > 0 && (
+                  <span
+                    className="absolute right-2 text-[10px] font-semibold text-gray-500 select-none pointer-events-none"
+                    style={{ top: `-${labelOffset}px` }}
+                  >
+                    {format(new Date().setHours(h, 0, 0, 0), "h a")}
+                  </span>
+                )}
+                <div className="border-b border-slate-200/50 h-full" />
               </div>
             ))}
           </div>
@@ -326,12 +335,16 @@ export function CalendarGrid({
             return (
               <div
                 key={day.toISOString()}
-                className="flex-1 min-w-[100px] border-r border-white/20 relative"
+                className="flex-1 min-w-[100px] border-r border-slate-200/70 relative"
               >
-                {/* Occupied day overlay for ALL_DAY / MULTI_DAY */}
-                {occupiedDayIndices.has(dayIdx) && (
-                  <div className="absolute inset-0 bg-zinc-500/6 pointer-events-none z-[1]" />
-                )}
+                {/* ALL_DAY / MULTI_DAY time-range overlays */}
+                {dayOverlays.has(dayIdx) && dayOverlays.get(dayIdx)!.map((o, i) => (
+                  <div
+                    key={i}
+                    className="absolute left-0 right-0 bg-zinc-500/6 pointer-events-none z-[1]"
+                    style={{ top: `${o.top}px`, height: `${o.height}px` }}
+                  />
+                ))}
 
                 {/* Time slots with 15-min precision */}
                 {slots.map((slot) => {
@@ -348,11 +361,11 @@ export function CalendarGrid({
                     slot.minutes >= Math.min(colStartMinutes, colEndMinutes) &&
                     slot.minutes < Math.max(colStartMinutes, colEndMinutes);
 
-                  let borderStyle = "border-b border-white/5";
+                  let borderStyle = "border-b border-slate-200/10";
                   if (slot.isHourSlot) {
-                    borderStyle = "border-b border-white/20";
+                    borderStyle = "border-b border-slate-200/50";
                   } else if (slot.isHalfHourSlot) {
-                    borderStyle = "border-b border-white/10";
+                    borderStyle = "border-b border-slate-200/20";
                   }
 
                   return (
@@ -367,7 +380,7 @@ export function CalendarGrid({
                           ? "hover:bg-blue-50/60 hover:shadow-inner"
                           : draggedTask
                           ? "hover:bg-blue-50/40"
-                          : "hover:bg-primary/6"
+                          : "hover:bg-slate-200/30 hover:shadow-inner"
                         }
                         ${isSelected ? "bg-primary/15" : ""}
                       `}
@@ -394,8 +407,8 @@ export function CalendarGrid({
                   <div
                     className="absolute left-0.5 right-0.5 rounded-xl bg-blue-400/20 border border-blue-400/50 border-dashed pointer-events-none z-10 overflow-hidden backdrop-blur-sm shadow-lg shadow-blue-500/10"
                     style={{
-                      top: `${ghostPreview.minutes}px`,
-                      height: `${Math.max(ghostPreview.height, 20)}px`,
+                      top: `${toPx(ghostPreview.minutes)}px`,
+                      height: `${Math.max(toPx(ghostPreview.height), 20)}px`,
                     }}
                   >
                     <div className="px-2 py-1 text-[10px] font-semibold text-blue-700 truncate flex items-center gap-1">
@@ -413,8 +426,8 @@ export function CalendarGrid({
                   <div
                     className="absolute left-0.5 right-0.5 rounded-md bg-primary/20 border border-primary/40 pointer-events-none z-10 transition-all duration-75"
                     style={{
-                      top: `${Math.min(colStartMinutes, colEndMinutes)}px`,
-                      height: `${Math.abs(colEndMinutes - colStartMinutes) + SLOT_HEIGHT}px`,
+                      top: `${toPx(Math.min(colStartMinutes, colEndMinutes))}px`,
+                      height: `${toPx(Math.abs(colEndMinutes - colStartMinutes)) + SLOT_HEIGHT}px`,
                     }}
                   >
                     <div className="absolute left-0 top-0 w-1 h-full rounded-l-md bg-primary/60" />
@@ -431,15 +444,15 @@ export function CalendarGrid({
                   />
                 ))}
 
-                {/* Current time indicator */}
-                {isToday && (
+                {/* Current time indicator — only within visible range */}
+                {isToday && isCurrentTimeInRange && (
                   <div
                     className="absolute left-0 right-0 pointer-events-none z-15"
-                    style={{ top: `${todayMinutes}px` }}
+                    style={{ top: `${toPx(todayMinutes)}px` }}
                   >
                     <div className="flex items-center">
-                      <div className="w-2 h-2 rounded-full bg-red-500 -ml-1 shadow-lg shadow-red-500/50" />
-                      <div className="flex-1 h-[2px] bg-red-500 shadow-sm shadow-red-500/30" />
+                      <div className="w-2.5 h-2.5 rounded-full bg-red-400 -ml-1 shadow-[0_0_8px_rgba(248,113,113,0.6)] animate-pulse" />
+                      <div className="flex-1 h-[2px] bg-red-400 shadow-[0_0_6px_rgba(248,113,113,0.4)]" />
                     </div>
                   </div>
                 )}

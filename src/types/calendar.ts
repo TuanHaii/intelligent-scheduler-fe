@@ -17,7 +17,9 @@ export interface DragSelectionState {
 }
 
 export const SLOT_INTERVAL = 15;
-export const SLOT_HEIGHT = 15;
-export const HOUR_HEIGHT = 60;
+export const SLOT_HEIGHT = 25;
+export const HOUR_HEIGHT = 100;
 export const NUM_SLOTS = 96;
 export const HEADER_HEIGHT = 56;
+export const START_HOUR = 1;
+export const END_HOUR = 23;

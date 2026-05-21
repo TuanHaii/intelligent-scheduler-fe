@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useSchedules, useCreateSchedule } from "@/hooks/useSchedules";
 import { getTasksService } from "@/services/task.service";
@@ -18,8 +18,15 @@ import { useDrag } from "@/context/DragContext";
 import { CalendarGrid } from "@/components/CalendarGrid";
 import { QuickSchedulePopover } from "@/components/QuickSchedulePopover";
 import { ScheduleDetailModal } from "@/components/ScheduleDetailModal";
+import { FindFreeTimeDrawer } from "@/components/FindFreeTimeDrawer";
 
-export function CalendarBoard() {
+export function CalendarBoard({
+  findFreeTrigger,
+  onFindFreeClose,
+}: {
+  findFreeTrigger?: number;
+  onFindFreeClose?: () => void;
+} = {}) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const weekDays = useMemo(() => getWeekDays(currentDate), [currentDate]);
 
@@ -40,8 +47,16 @@ export function CalendarBoard() {
   const [quickSchedule, setQuickSchedule] = useState<QuickScheduleData | null>(null);
 
   const [selectedScheduleId, setSelectedScheduleId] = useState<number | null>(null);
+  const [isFindFreeOpen, setIsFindFreeOpen] = useState(false);
+  const [findFreeDefaultDate, setFindFreeDefaultDate] = useState<string | undefined>(undefined);
 
   const { draggedTask } = useDrag();
+
+  useEffect(() => {
+    if (findFreeTrigger) {
+      setIsFindFreeOpen(true);
+    }
+  }, [findFreeTrigger]);
 
   const handlePrevWeek = useCallback(() => setCurrentDate((d) => subWeeks(d, 1)), []);
   const handleNextWeek = useCallback(() => setCurrentDate((d) => addWeeks(d, 1)), []);
@@ -77,6 +92,17 @@ export function CalendarBoard() {
     if (!open) {
       setSelectedScheduleId(null);
     }
+  }, []);
+
+  const handleFindFreeSelectSlot = useCallback((start: string, end: string) => {
+    setSelectedSlot({ start, end });
+    setPrefilledTask(null);
+    setIsCreateModalOpen(true);
+  }, []);
+
+  const handleConflict = useCallback((slot: { start: string; end: string }) => {
+    setFindFreeDefaultDate(format(parseISO(slot.start), "yyyy-MM-dd"));
+    setIsFindFreeOpen(true);
   }, []);
 
   return (
@@ -133,12 +159,26 @@ export function CalendarBoard() {
         }}
         initialSlot={selectedSlot}
         prefilledTask={prefilledTask}
+        onConflict={handleConflict}
       />
 
       <ScheduleDetailModal
         scheduleId={selectedScheduleId}
         open={selectedScheduleId !== null}
         onOpenChange={handleDetailModalClose}
+      />
+
+      <FindFreeTimeDrawer
+        open={isFindFreeOpen}
+        onOpenChange={(open) => {
+          setIsFindFreeOpen(open);
+          if (!open) {
+            setFindFreeDefaultDate(undefined);
+            onFindFreeClose?.();
+          }
+        }}
+        onSelectSlot={handleFindFreeSelectSlot}
+        defaultDate={findFreeDefaultDate}
       />
     </div>
   );
@@ -149,11 +189,13 @@ function CreateScheduleModal({
   onOpenChange,
   initialSlot,
   prefilledTask,
+  onConflict,
 }: {
   open: boolean;
   onOpenChange: (o: boolean) => void;
   initialSlot: { start: string; end: string } | null;
   prefilledTask: { id: number; title: string } | null;
+  onConflict?: (slot: { start: string; end: string }) => void;
 }) {
   const [title, setTitle] = useState("");
   const [taskId, setTaskId] = useState<string>("none");
@@ -199,6 +241,9 @@ function CreateScheduleModal({
               title: "Time conflict!",
               description: err.message || "Khung giờ này đã có sự kiện khác. Vui lòng chọn thời gian khác!",
             });
+            if (onConflict && initialSlot) {
+              onConflict(initialSlot);
+            }
           } else {
             toast({
               className: "bg-red-500/10 border border-red-400/20 backdrop-blur-xl",
