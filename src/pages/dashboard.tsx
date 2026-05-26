@@ -9,6 +9,8 @@ import { CalendarBoard } from "@/components/CalendarBoard";
 import { UserMenu } from "@/components/UserMenu";
 import { PROFILE_KEY } from "@/components/UserMenu";
 import { DragProvider } from "@/context/DragContext";
+import AIChatButton from "@/components/chat/AIChatButton";
+import ChatWindow from "@/components/chat/ChatWindow";
 
 export default function Dashboard() {
   const [, setLocation] = useLocation();
@@ -29,7 +31,7 @@ export default function Dashboard() {
   }, [setLocation, queryClient]);
 
   return (
-    <DragProvider>
+      <DragProvider>
     <div className="min-h-screen bg-mesh flex flex-col relative">
       {/* Top Nav */}
       <header className="h-16 px-6 flex items-center justify-between border-b border-white/20 bg-white/10 backdrop-blur-md sticky top-0 z-10">
@@ -41,6 +43,8 @@ export default function Dashboard() {
         </div>
         
         <div className="flex items-center gap-2">
+          <AIChatButton />
+
           <Tooltip>
             <TooltipTrigger asChild>
               <Button variant="ghost" size="icon" className="rounded-full relative hover:bg-white/20">
@@ -98,6 +102,7 @@ export default function Dashboard() {
         </div>
       </main>
 
+        <ChatWindow />
     </div>
     </DragProvider>
   );
