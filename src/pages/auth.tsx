@@ -28,8 +28,7 @@ export default function Auth() {
 
   const loginMutation = useMutation({
     mutationFn: loginService,
-    onSuccess: (res) => {
-      localStorage.setItem("scheduler_user", res.tokenType);
+    onSuccess: () => {
       setLocation("/dashboard");
     },
     onError: (err: Error) => {

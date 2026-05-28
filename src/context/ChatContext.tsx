@@ -200,7 +200,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     try {
       const res = await getConversationDetailApi(id);
       if (!mountedRef.current) return;
-      const rawMessages = res?.data?.messages;
+      const rawMessages = res?.messages;
       const messages = Array.isArray(rawMessages) ? rawMessages : [];
       dispatch({
         type: "SET_MESSAGES",
@@ -247,21 +247,8 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       dispatch({ type: "SET_TYPING", payload: true });
 
       try {
-        const res = await sendMessageApi(conversationId, text);
+        await sendMessageApi(conversationId, text);
         if (!mountedRef.current) return;
-
-        const assistantMsg: Message = {
-          id: crypto.randomUUID(),
-          role: "AI",
-          content: res.data.reply,
-          createdAt: new Date().toISOString(),
-        };
-        dispatch({
-          type: "ADD_MESSAGE",
-          payload: { conversationId, message: assistantMsg },
-        });
-
-        fetchConversations();
       } catch (err: unknown) {
         if (!mountedRef.current) return;
         const axiosErr = err as { response?: { status?: number } };
@@ -270,10 +257,28 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         } else {
           toast.error("AI hiện đang bận, vui lòng thử lại sau");
         }
-      } finally {
+        dispatch({ type: "SET_TYPING", payload: false });
+        return;
+      }
+
+      try {
+        const detail = await getConversationDetailApi(conversationId);
+        if (!mountedRef.current) return;
+        const reloadedMessages = Array.isArray(detail?.messages) ? detail.messages : [];
+        dispatch({
+          type: "SET_MESSAGES",
+          payload: { conversationId, messages: reloadedMessages },
+        });
+      } catch {
         if (mountedRef.current) {
-          dispatch({ type: "SET_TYPING", payload: false });
+          toast.error("Không thể tải tin nhắn mới nhất");
         }
+      }
+
+      fetchConversations();
+
+      if (mountedRef.current) {
+        dispatch({ type: "SET_TYPING", payload: false });
       }
     },
     [createConversationInternal, fetchConversations]
@@ -295,7 +300,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     getConversationDetailApi(id)
       .then((res) => {
         if (cancelled) return;
-        const rawMessages = res?.data?.messages;
+        const rawMessages = res?.messages;
         const messages = Array.isArray(rawMessages) ? rawMessages : [];
         dispatch({
           type: "SET_MESSAGES",

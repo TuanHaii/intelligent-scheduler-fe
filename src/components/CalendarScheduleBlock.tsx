@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback, memo } from "react";
 import { useUpdateSchedule } from "@/hooks/useSchedules";
 import type { Schedule } from "@/types/schedule.type";
-import { ApiError } from "@/types/schedule.type";
+import { ApiError } from "@/api/axios";
 import { formatTime, getSlotPosition, snapToInterval, PIXELS_PER_MINUTE } from "@/lib/date-utils";
 import { parseISO, addMinutes, differenceInMinutes } from "date-fns";
 import { Link2, GripVertical, Clock } from "lucide-react";

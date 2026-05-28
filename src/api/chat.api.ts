@@ -17,7 +17,7 @@ export const getConversationsApi = async () => {
 };
 
 export const getConversationDetailApi = async (id: number) => {
-  const { data } = await apiClient.get<ApiResponse<ConversationDetail>>(
+  const { data } = await apiClient.get<ConversationDetail>(
     `/conversations/${id}`
   );
   return data;
@@ -32,8 +32,8 @@ export const sendMessageApi = async (
   message: string
 ) => {
   const { data } = await apiClient.post<ApiResponse<SendMessageResponse>>(
-    "/chat/ask",
-    { conversationId, message }
+    `/chat/${conversationId}`,
+    { message }
   );
   return data;
 };

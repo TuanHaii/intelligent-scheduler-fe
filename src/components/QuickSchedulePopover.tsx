@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { setMinutes, setHours, startOfDay } from "date-fns";
 import { useCreateSchedule } from "@/hooks/useSchedules";
 import type { DragTask, DropPosition } from "@/types/dnd";
-import { ApiError } from "@/types/schedule.type";
+import { ApiError } from "@/api/axios";
 import { snapToInterval } from "@/lib/date-utils";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";

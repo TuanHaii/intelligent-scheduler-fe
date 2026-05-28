@@ -31,7 +31,12 @@ function EmptyState() {
 
 export default function ChatSidebar() {
   const { state, createConversation, selectConversation } = useChat();
-  const { conversations, activeConversationId, showSidebar, isLoadingConversations } = state;
+  const {
+    conversations,
+    activeConversationId,
+    showSidebar,
+    isLoadingConversations,
+  } = state;
 
   const safeConversations: Conversation[] = Array.isArray(conversations)
     ? conversations

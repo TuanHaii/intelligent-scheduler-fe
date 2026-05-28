@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useSchedules, useCreateSchedule } from "@/hooks/useSchedules";
 import { getTasksService } from "@/services/task.service";
 import type { Schedule } from "@/types/schedule.type";
-import { ApiError } from "@/types/schedule.type";
+import { ApiError } from "@/api/axios";
 import type { Task } from "@/types/task.type";
 import type { QuickScheduleData } from "@/types/dnd";
 import { getWeekDays } from "@/lib/date-utils";

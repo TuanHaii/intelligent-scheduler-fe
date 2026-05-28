@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useScheduleDetail, useUpdateSchedule, useDeleteSchedule } from "@/hooks/useSchedules";
-import { ApiError } from "@/types/schedule.type";
+import { ApiError } from "@/api/axios";
 import { parseISO, differenceInMinutes } from "date-fns";
 import { Clock, Link2, Loader2, CalendarRange, AlertCircle, X, Trash2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
