@@ -19,6 +19,7 @@ import { CalendarGrid } from "@/components/CalendarGrid";
 import { QuickSchedulePopover } from "@/components/QuickSchedulePopover";
 import { ScheduleDetailModal } from "@/components/ScheduleDetailModal";
 import { FindFreeTimeDrawer } from "@/components/FindFreeTimeDrawer";
+import { useScheduleNavigationStore } from "@/stores/schedule-navigation.store";
 
 export function CalendarBoard({
   findFreeTrigger,
@@ -57,6 +58,16 @@ export function CalendarBoard({
       setIsFindFreeOpen(true);
     }
   }, [findFreeTrigger]);
+
+  const externalScheduleId = useScheduleNavigationStore((s) => s.selectedScheduleId);
+  const setExternalScheduleId = useScheduleNavigationStore((s) => s.setSelectedScheduleId);
+
+  useEffect(() => {
+    if (externalScheduleId !== null) {
+      setSelectedScheduleId(externalScheduleId);
+      setExternalScheduleId(null);
+    }
+  }, [externalScheduleId, setExternalScheduleId]);
 
   const handlePrevWeek = useCallback(() => setCurrentDate((d) => subWeeks(d, 1)), []);
   const handleNextWeek = useCallback(() => setCurrentDate((d) => addWeeks(d, 1)), []);

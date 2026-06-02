@@ -14,6 +14,9 @@ apiClient.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    if (import.meta.env.DEV) {
+      console.log(`[API] ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`);
+    }
     return config;
   },
   (error) => Promise.reject(error),

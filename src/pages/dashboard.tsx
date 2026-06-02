@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Bell, Wand2 } from "lucide-react";
+import { Wand2 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { TaskBoard } from "@/components/TaskBoard";
 import { CalendarBoard } from "@/components/CalendarBoard";
@@ -11,6 +11,10 @@ import { PROFILE_KEY } from "@/components/UserMenu";
 import { DragProvider } from "@/context/DragContext";
 import AIChatButton from "@/components/chat/AIChatButton";
 import ChatWindow from "@/components/chat/ChatWindow";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
+import { NotificationToastContainer } from "@/components/notifications/NotificationToastContainer";
+import { useNotificationStore } from "@/stores/notification.store";
+import { useWebSocket } from "@/hooks/useWebSocket";
 
 export default function Dashboard() {
   const [, setLocation] = useLocation();
@@ -21,6 +25,12 @@ export default function Dashboard() {
     setFindFreeCounter(0);
   }, []);
 
+  const syncNotifications = useNotificationStore((s) => s.syncNotifications);
+  // const connectNotifWS = useNotificationStore((s) => s.connectWebSocket);
+  // const disconnectNotifWS = useNotificationStore((s) => s.disconnectWebSocket);
+
+  useWebSocket();
+
   useEffect(() => {
     const token = localStorage.getItem("accessToken");
     if (!token) {
@@ -28,11 +38,17 @@ export default function Dashboard() {
       return;
     }
     queryClient.invalidateQueries({ queryKey: PROFILE_KEY });
-  }, [setLocation, queryClient]);
+    syncNotifications();
+    // connectNotifWS();
+    // return () => {
+    //   disconnectNotifWS();
+    // };
+  }, [setLocation, queryClient, syncNotifications]);
 
   return (
       <DragProvider>
     <div className="min-h-screen bg-mesh flex flex-col relative">
+      <NotificationToastContainer />
       {/* Top Nav */}
       <header className="h-16 px-6 flex items-center justify-between border-b border-white/20 bg-white/10 backdrop-blur-md sticky top-0 z-10">
         <div className="flex items-center gap-4">
@@ -45,17 +61,7 @@ export default function Dashboard() {
         <div className="flex items-center gap-2">
           <AIChatButton />
 
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" className="rounded-full relative hover:bg-white/20">
-                <Bell className="w-5 h-5 text-gray-600" />
-                <span className="absolute top-2 right-2 w-2 h-2 bg-red-400 rounded-full border border-white" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Coming in Sprint 5</p>
-            </TooltipContent>
-          </Tooltip>
+          <NotificationBell />
 
           <Tooltip>
             <TooltipTrigger asChild>
@@ -86,7 +92,7 @@ export default function Dashboard() {
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-medium text-gray-800">Backlog</h2>
           </div>
-          <div className="flex-1 glass-card p-4 overflow-hidden relative">
+          <div className="flex-1 glass-card p-4 overflow-y-auto overflow-x-hidden relative calendar-scrollbar">
              <TaskBoard />
           </div>
         </div>
